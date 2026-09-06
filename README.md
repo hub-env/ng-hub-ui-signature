@@ -9,8 +9,27 @@ SVG-backed signature field for Angular forms. It records mouse, touch and pen in
 ## Install
 
 ```bash
-npm install ng-hub-ui-signature ng-hub-ui-forms
+npm install ng-hub-ui-signature ng-hub-ui-forms ng-hub-ui-utils
 ```
+
+Then load the forms stylesheet once, in the application's global styles. The field's root element is
+`class="hub-field hub-signature"` and the chrome around the canvas — the label row, the helper text,
+the validation feedback and the `?` mark that opens it — is defined in `ng-hub-ui-forms`, not in the
+signature's own sheet. Without this line the canvas looks right and everything around it does not:
+helper text and errors fall back to unstyled body text, and the `?` mark, whose glyph and circle both
+come from that sheet, is left as an empty button with nothing in it.
+
+```scss
+// styles.scss
+@use 'ng-hub-ui-forms/styles';
+
+// Only if you use formTextType="tooltip": the bubble is appended to <body>, out of reach of
+// anything the sheet above declares.
+@use 'ng-hub-ui-utils/styles/tooltip';
+```
+
+`@use 'ng-hub-ui-signature/styles'` replaces neither: that entry point forwards the theming mixin
+described below and emits no chrome at all.
 
 ## Usage
 
@@ -26,6 +45,33 @@ export class ContractFormComponent {}
 ```
 
 The form control value is an SVG string. Use `toDataUrl('image/png')` for bitmap export, or `clear()`, `undo()` and `redo()` to control the field programmatically.
+
+## Inputs
+
+| Input | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `label` | `string` | `''` | Visible label, and the accessible name of the surface. See [How the field is named](#how-the-field-is-named). |
+| `labelType` | `HubLabelType` | `'stacked'` | `'horizontal'` puts the label in a first column beside the surface. `'floating'` falls back to stacked. |
+| `formText` | `string` | `''` | Helper text. A projected `<ng-template hubFormText>` replaces it with markup. |
+| `formTextType` | `'bottom' \| 'tooltip'` | `'bottom'` | Where the helper text goes: under the surface, or behind a `?` at the end of the label row. |
+| `height` | `number` | `160` | Logical surface height in CSS pixels. Live: the bitmap and the stored `viewBox` follow it. |
+| `strokeColor` | `string` | `'currentColor'` | Ink recorded in new strokes, resolved to a concrete colour before capture. |
+| `strokeWidth` | `number` | `2` | Base width recorded in new strokes. |
+| `readonly` | `boolean` | `false` | Keeps the signature readable and focusable, refuses new strokes. |
+| `controls` | `boolean` | `true` | Shows the built-in clear / undo / redo row. |
+| `ariaLabel` | `string` | `''` | Accessible name for a surface with **no** visible `[label]`; ignored when there is one. |
+| `labels` | `Partial<HubSignatureLabels>` | `{}` | Per-field override of the translated action labels. |
+| `classlist` | `string` | `''` | Extra classes on the host element, `<hub-signature>` itself — not on the canvas. |
+| `formControlName` | `string` | — | Name of the control in the surrounding form group. `ReactiveFormsModule` still has to be imported. |
+| `required` | `boolean \| null` | `null` | Two-way. Derived from the control's validators on a reactive binding, so set it by hand only elsewhere. |
+| `disabled` | `boolean` | `false` | Two-way, and written by `setDisabledState()`. On a reactive field prefer `control.disable()`. |
+| `showValid` | `boolean` | `false` | Opt-in success state; defaults to the global `provideHubForms({ showValid })`. |
+| `validFeedback` | `string \| null` | `null` | Success message, shown only while `[showValid]` is on and the field is touched and valid. |
+| `invalidFeedbackTemplateFn` | `((key: string, value: any) => string) \| null` | `null` | Per-field override of the error-message builder. |
+
+`height`, `strokeColor` and `strokeWidth` describe the surface and the pen; the last six are
+inherited from the `ng-hub-ui-forms` field contract, which is why they behave exactly as they do on
+`hub-input`.
 
 ## Asking what the field holds
 

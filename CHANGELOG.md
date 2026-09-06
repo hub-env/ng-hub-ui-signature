@@ -1,5 +1,126 @@
 # Changelog
 
+## [22.7.0] - 2026-09-06
+
+### Added
+
+- **Projected `hubFormText` and `hubValidationError` templates are rendered.** Both queries
+  live on `HubFieldControl`, so a `<ng-template hubFormText>` or a
+  `<ng-template hubValidationError key="required">` placed inside `<hub-signature>` compiled,
+  was matched and was collected — and then read by nothing: the field printed the plain
+  `formText()` string and the default message for every error key. A projected template that
+  compiles and silently draws nothing is the worst shape a gap can take, and it is the third
+  time this field has taken it, after `[validFeedback]` in 22.3.0 and `formTextType` in 22.6.0.
+
+  The helper block now renders the template when one is projected and falls back to the string
+  otherwise, and each validation error resolves its own template before reaching the default
+  message — the same two `ngTemplateOutlet` pairs the rest of the family uses, so a consumer
+  who wrote the markup for `hub-input` can move it to `hub-signature` unchanged. Both
+  directives are public exports of `ng-hub-ui-forms`, which is exactly why they were reached
+  for here.
+
+### Changed
+
+- **`FUNCTIONALITIES.md` answers to the examples that exist.** `strokeColor`, `labelType`,
+  `ariaLabel`, the per-field `labels` override and `(valueChange)` were all marked as having no
+  example while three of them were already exercised or are now; `formTextType`, `showValid` and
+  `disabled` had no row at all. The table is the map of what is demonstrated, so a stale mark
+  there sends a consumer looking for a demo that is there — or trusting one that is not.
+  The two projected templates this release renders have rows of their own, both covered by the
+  example added for them.
+
+### Fixed
+
+- **`MIGRATION.md` no longer warns about a defect fixed in 22.6.1.** The guide still told a reader
+  to prove server-side rendering in a spike before scheduling the migration, or to defer the field
+  behind `@defer (on viewport)`, because `writeValue()` reached the canvas with no platform guard.
+  `redraw()` has returned early outside the browser since 22.6.1. A warning that outlives its
+  defect costs more than a missing one: it sends someone to budget for work that is already done,
+  and it makes every other warning in the file cheaper to ignore. The section and the migration
+  checklist now state the version the guard arrived in, for readers pinned below it.
+
+- **The touched-state section no longer contradicts the one three screens above it.** It closed
+  with "the message renders as text only; there is still no border change", which 22.5.0 made
+  false — the drawing surface takes the danger border and ring with the message. The same file
+  documents that change under its own heading, so the guide disagreed with itself.
+
+- **`classlist` lands on the host, and both documents now say so.** `FUNCTIONALITIES.md` and the
+  library page described it as classes applied to the drawing surface; the component binds
+  `host: { '[class]': 'classlist()' }`. A consumer writing a rule against a class they believed
+  was on the canvas got a selector matching nothing, with no error to explain it.
+
+- **`README.md` and `README.es.md` document the inputs.** Neither mentioned `height`,
+  `strokeWidth`, `labelType`, `formText`, `showValid`, `validFeedback` or `classlist`, so a reader
+  who never opened the documentation site could not discover half the public surface — the file
+  read as a feature tour rather than a reference. Both now carry an input table, the inherited
+  `ng-hub-ui-forms` half included.
+
+- **`README.es.md` carries the migration section its English counterpart leads with.** The Spanish
+  file went straight from the description to installation, so a Spanish-speaking reader arriving
+  from `angular2-signaturepad` was never told the guide exists — and it is the document that says
+  which stored signatures cannot be loaded back at all.
+
+- **The declared peer ranges now name versions the component actually builds against.** They
+  read `ng-hub-ui-forms >=22.0.0` and `ng-hub-ui-utils >=22.8.0`, and neither floor was ever
+  true. `showsFormTextTooltip()`, `formText()` and the `.hub-field__label-row` styling the
+  label row is drawn with all arrived with forms 22.31.0 — the release that also moved
+  `formText` onto `HubFieldControl`, which is why 22.6.0 could delete the component's own
+  declaration. `HubTooltipDirective` arrived with utils 22.9.0; against 22.8.x the import
+  resolves to nothing and the directive sits `undefined` in the `imports` array.
+
+  The ranges being wide did not make them permissive, it made them silent. forms 22.31.0 is
+  days old, so an existing consumer adding this field keeps the forms version it already has,
+  npm sees the range satisfied and upgrades nothing, and the application fails to compile on a
+  base class member that is simply not there. The floors are now `>=22.31.0` and `>=22.9.0`,
+  which is what the rest of the family already does — `ng-hub-ui-forms` states its real utils
+  floor rather than the oldest major.
+
+- **The helper-text mark survives a field with no visible label.** `formTextType="tooltip"`
+  hangs the helper text behind a question mark at the end of the label row, and the whole row
+  was nested inside the `@if (label() || required())` guard. A bare surface — which
+  `MIGRATION.md` documents as a supported configuration, and which `[ariaLabel]` exists to
+  name — therefore drew no mark, while the block below had already stood down because tooltip
+  mode was on. The helper text was accepted, resolved, and rendered nowhere at all, so the only
+  way out was to give the field a visible label it was deliberately built without.
+
+  The row is now rendered because the hint is due, not because the label is, and the label
+  moves into it only when there is one. That is the rule `hub-input` and `hub-segmented`
+  already state in their own templates; the divergence here was accidental, not a decision a
+  canvas needed.
+
+- **`[height]` resizes the surface it already reported.** `canvas.height`, `canvas.style.height`
+  and the repaint were written in one place only — `resizeCanvas()`, called once from
+  `afterNextRender()` — while `toSvg()` read `height()` live. Changing the input therefore moved
+  the `viewBox` of every value saved from that moment on and moved nothing on screen: ink drawn on
+  a 160-tall surface was filed as a 240-tall document, so it no longer filled the frame it declared
+  — it sat in the top two thirds, and a viewer forcing it back into the old box squeezed it. The
+  binding looked reactive because it is a signal input, and the only way to keep the archive honest
+  was to treat it as fixed or to call `resizeCanvas()` by hand after every change.
+
+  An effect now watches `height()` and re-runs `resizeCanvas()`, which is the call the guide used
+  to ask the consumer to make. Strokes are still never rescaled — they keep the coordinates they
+  were captured with, and the taller surface simply leaves more room beneath them — so change the
+  height while the field is empty whenever the ink has to keep its place inside the box.
+
+- **The README states the stylesheet setup step.** Install said
+  `npm install ng-hub-ui-signature ng-hub-ui-forms` and stopped there, while everything around the
+  canvas — the label row, the helper text, the validation feedback, the `?` mark that opens it — is
+  drawn by `ng-hub-ui-forms`, whose sheet nothing told you to load. A reader following the README
+  alone got a correct canvas surrounded by unstyled body text and an empty button where the mark
+  should be, with no error anywhere to explain it. The warning existed only in `MIGRATION.md`, which
+  a new consumer has no reason to open, and the documentation site hides the gap because it loads
+  both sheets globally. Both READMEs now carry the `@use` lines — the forms sheet, plus the utils
+  tooltip sheet for `formTextType="tooltip"`, whose bubble is appended to `<body>` out of that
+  sheet's reach — and `ng-hub-ui-utils` joins the install line it was already a peer of.
+
+- **`BREAKING_CHANGES.md` covers 22.5.0 and 22.6.0.** The newest section was 22.4.0 while the
+  library was on 22.6.1, and both releases in between asked the consumer to do something: 22.5.0 to
+  delete the invalid-state override the migration guide used to recommend, which now collides with
+  the component's own rule at equal specificity and can stop applying in a production build while
+  still working in the dev server; 22.6.0 to raise the `ng-hub-ui-forms` floor to 22.31.0, without
+  which the application no longer compiles. In a family whose major tracks Angular, that file is the
+  only warning a breaking change can give, and it said nothing.
+
 ## [22.6.1] - 2026-09-03
 
 ### Fixed

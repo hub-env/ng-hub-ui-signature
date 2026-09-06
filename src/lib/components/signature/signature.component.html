@@ -6,41 +6,45 @@
 	[class.hub-signature--invalid]="isInvalid"
 	[class.hub-signature--valid]="showsValid"
 >
-	@if (label() || required()) {
+	@if (showsFormTextTooltip()) {
 		<!--
-			No `for`: it associates only with labelable elements, and a <canvas> is not one, so the
-			attribute would claim an association the browser never makes. The surface is named by
-			`aria-labelledby` pointing back here, and clicking still focuses it.
+			The row exists because the hint does, not because the label does. A bare surface with
+			no visible label still has helper text to offer, and the mark is the only place left
+			to offer it from once the block below stands down.
 
 			The hint sits OUTSIDE the label for the same reason it does in every other field:
 			clicking this label focuses the drawing surface, so a button nested in it would open
 			the tooltip and put the pen in the user's hand at once.
 		-->
-		@if (showsFormTextTooltip()) {
-			<div class="hub-field__label-row">
-				<label [id]="labelId" class="hub-signature__label" (click)="focusSurface()">
-					{{ label() }}
-					@if (required()) {
-						<span class="hub-signature__required" aria-hidden="true">*</span>
-					}
-				</label>
-				<button
-					type="button"
-					class="hub-field__hint"
-					[attr.aria-label]="formText()"
-					[hubTooltip]="formText()"
-					hubTooltipPlacement="top"
-				></button>
-			</div>
-		} @else {
-			<label [id]="labelId" class="hub-signature__label" (click)="focusSurface()">
-				{{ label() }}
-				@if (required()) {
-					<span class="hub-signature__required" aria-hidden="true">*</span>
-				}
-			</label>
-		}
+		<div class="hub-field__label-row">
+			@if (label() || required()) {
+				<ng-container [ngTemplateOutlet]="hubSignatureLabelTpl" />
+			}
+			<button
+				type="button"
+				class="hub-field__hint"
+				[attr.aria-label]="formText()"
+				[hubTooltip]="formText()"
+				hubTooltipPlacement="top"
+			></button>
+		</div>
+	} @else if (label() || required()) {
+		<ng-container [ngTemplateOutlet]="hubSignatureLabelTpl" />
 	}
+
+	<!--
+		No `for`: it associates only with labelable elements, and a <canvas> is not one, so the
+		attribute would claim an association the browser never makes. The surface is named by
+		`aria-labelledby` pointing back here, and clicking still focuses it.
+	-->
+	<ng-template #hubSignatureLabelTpl>
+		<label [id]="labelId" class="hub-signature__label" (click)="focusSurface()">
+			{{ label() }}
+			@if (required()) {
+				<span class="hub-signature__required" aria-hidden="true">*</span>
+			}
+		</label>
+	</ng-template>
 
 	<!--
 		role="application" is deliberate and load-bearing. Arrow keys ARE the keyboard drawing
@@ -98,8 +102,14 @@
 		</div>
 	}
 
-	@if (formText() && !showsFormTextTooltip()) {
-		<div class="hub-field__form-text" [class.hub-field__form-text--disabled]="disabled()">{{ formText() }}</div>
+	@if (!showsFormTextTooltip() && (formText() || formTextTmp())) {
+		<div class="hub-field__form-text" [class.hub-field__form-text--disabled]="disabled()">
+			@if (formTextTmp()) {
+				<ng-container [ngTemplateOutlet]="formTextTmp()!"></ng-container>
+			} @else {
+				{{ formText() }}
+			}
+		</div>
 	}
 
 	@if (isInvalid) {
@@ -107,7 +117,15 @@
 			<ul>
 				@for (error of errors | keyvalue; track error.key) {
 					<li>
-						<span class="hub-field__feedback-text">{{ getInvalidFeedbackTemplate(error.key, error.value) }}</span>
+						<ng-container
+							[ngTemplateOutlet]="_errorTemplates[error.key] ?? defaultErrorTpt"
+							[ngTemplateOutletContext]="{ $implicit: error.value, value: error.value }"
+						></ng-container>
+						<ng-template #defaultErrorTpt>
+							<span class="hub-field__feedback-text">{{
+								getInvalidFeedbackTemplate(error.key, error.value)
+							}}</span>
+						</ng-template>
 					</li>
 				}
 			</ul>

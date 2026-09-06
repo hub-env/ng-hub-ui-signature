@@ -6,6 +6,64 @@ This file documents breaking changes and migration steps for `ng-hub-ui-signatur
 > compatibility. A breaking change therefore ships as a **minor**, and this file is the only warning
 > you get — read it before upgrading within a major line.
 
+## [22.6.0]
+
+### `ng-hub-ui-forms` must be at least 22.31.0
+
+**What changed.** The component stopped declaring its own `formText` and inherits it from
+`HubFieldControl`, which only carries it since `ng-hub-ui-forms` 22.31.0. The helper-text mark
+added in the same release reads `formTextType` and `showsFormTextTooltip()` off that same base
+class, and the `.hub-field__label-row` it sits in is drawn by that package's stylesheet.
+
+**Why.** TypeScript refuses the redeclaration without an `override` modifier (TS4114), and
+annotating it would have kept a second declaration of one input — which is how two declarations
+drift apart. The member belongs to the base class.
+
+**What you have to do.** Raise `ng-hub-ui-forms` to `>= 22.31.0` in the same step you take this
+package to 22.6.0. npm will not do it for you: the peer range published with 22.6.0 still read
+`>= 22.0.0`, so the version already installed satisfies it and nothing is upgraded. Read the
+installed forms version yourself; a quiet install is not evidence that the two match.
+
+**If you do nothing.** The build fails on a base-class member that is not there — `Property
+'formText' does not exist on type 'HubSignatureComponent'`, or a template type-check error on
+`formTextType`. It fails loudly, at build time; nothing ships broken.
+
+## [22.5.0]
+
+### A hand-written invalid-state rule for the canvas now collides with the component's own
+
+**What changed.** The drawing surface takes the error and success colours from the package:
+`.hub-signature--invalid .hub-signature__canvas` sets the border from
+`--hub-form-invalid-border-color`, with the matching focus ring, and `--valid` does the same from
+the success tokens. Up to 22.4.0 both classes were bound on the root and styled by nothing, and
+`MIGRATION.md` told you to write that rule yourself.
+
+**Why.** Every other field of the family colours its control when the form rejects it. A
+required-but-empty signature printed a message under a canvas that looked exactly like a valid one,
+and on a long form that message scrolls out of sight, leaving a submit button that refuses to work
+for no visible reason.
+
+**What you have to do.** Delete the workaround and set the token instead — the component reads it,
+and a token inherits down to the field:
+
+```scss
+/* Before — the exact selector the component now ships, at identical specificity (0,2,0) */
+.hub-signature--invalid .hub-signature__canvas {
+	border-color: #b91c1c;
+}
+
+/* After */
+.contract-form {
+	--hub-form-invalid-border-color: #b91c1c;
+}
+```
+
+**If you do nothing.** Nothing errors, and that is the problem. Two rules matching the same element
+at the same specificity are decided by document order, which here means stylesheet injection order
+— not stable between the dev server and a production build. If your colours happened to match the
+tokens you will never notice; if you customised them, the override can work in development and
+silently stop applying in production.
+
 ## [22.4.0]
 
 ### `[ariaLabel]` is ignored on a field that has a `[label]`

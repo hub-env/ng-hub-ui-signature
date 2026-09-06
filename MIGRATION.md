@@ -28,7 +28,7 @@ The trigger is the Angular floor. The incumbent has published nothing for Angula
 `ng-hub-ui-signature` 22.2.0 is one such field. Before you commit, three costs:
 
 - **It is not a like-for-like replacement.** Package name, selector, component class, registration model, configuration model, event payloads and the two data methods all change. Several capabilities have no counterpart at all — see [What does not migrate](#5-what-does-not-migrate).
-- **It requires Angular `>= 21`**, plus `ng-hub-ui-forms >= 22.0.0` and `ng-hub-ui-utils >= 22.8.0`. For most current `angular2-signaturepad` users, the Angular upgrade is the larger half of the work, not the component swap.
+- **It requires Angular `>= 21`**, plus `ng-hub-ui-forms >= 22.31.0` and `ng-hub-ui-utils >= 22.9.0`. For most current `angular2-signaturepad` users, the Angular upgrade is the larger half of the work, not the component swap.
 - **Signatures you stored as PNG or JPEG data URLs cannot be loaded back for editing.** There is no `fromDataURL()` equivalent under any name. Read [that section](#fromdataurl-no-inbound-path-for-raster-signatures) before planning anything else; it is the gap most likely to break a live feature.
 
 What changes in exchange: a standalone component with no third-party drawing dependency, `ControlValueAccessor` integration so the signature is a form control value, SVG rather than a PNG blob as the canonical serialization, built-in clear/undo/redo, and a label/validation shell shared with `ng-hub-ui-forms`.
@@ -51,8 +51,8 @@ Peer dependencies declared by `ng-hub-ui-signature@22.2.0`:
 | Peer | Range |
 | --- | --- |
 | `@angular/common`, `@angular/core`, `@angular/forms` | `>= 21.0.0` |
-| `ng-hub-ui-forms` | `>= 22.0.0` |
-| `ng-hub-ui-utils` | `>= 22.8.0` |
+| `ng-hub-ui-forms` | `>= 22.31.0` |
+| `ng-hub-ui-utils` | `>= 22.9.0` |
 
 Install all three. The component's module imports `HubTranslationService` from `ng-hub-ui-utils` unconditionally, so the package must resolve at build time even though the service itself is injected with `{ optional: true }`. The package README's shorter install line omits it.
 
@@ -224,7 +224,7 @@ Every exported member of `angular2-signaturepad` 4.0.2, and its status against `
 | --- | --- | --- |
 | `[options]` (untyped `any` bag) | — | **Missing.** Every setting is a discrete typed signal input. |
 | `options.canvasWidth` | — | **Missing.** Width is measured from the DOM; express it in CSS. |
-| `options.canvasHeight` | `[height]` (`input(160, numberAttribute)`) | **Different semantics.** Effectively initialisation-only — see below. |
+| `options.canvasHeight` | `[height]` (`input(160, numberAttribute)`) | **Different semantics.** The surface follows the input, but existing strokes are never rescaled — see below. |
 | `options.penColor` | `[strokeColor]` (`input<string>('currentColor')`) | **Different semantics.** Colour is stored per stroke. The `currentColor` default is resolved against the surface when the stroke opens, so a concrete colour reaches the archive — before 22.3.0 the keyword was stored verbatim and painted black. |
 | `options.minWidth` / `options.maxWidth` | `[strokeWidth]` (`input(2, numberAttribute)`) | **Different semantics.** Constant width; no velocity-based variation. |
 | `options.velocityFilterWeight` | — | **Missing.** |
@@ -276,7 +276,7 @@ Every exported member of `angular2-signaturepad` 4.0.2, and its status against `
 
 | angular2-signaturepad | ng-hub-ui-signature | Status |
 | --- | --- | --- |
-| `ngAfterContentInit()` — applies `canvasWidth`/`canvasHeight`, constructs the `signature_pad` instance | `ngAfterContentInit()` — inherited; wires validation templates and derives `required` | **Different semantics.** Canvas sizing now happens once in `afterNextRender(() => this.resizeCanvas())` from the constructor, i.e. later than the incumbent's content-init sizing. |
+| `ngAfterContentInit()` — applies `canvasWidth`/`canvasHeight`, constructs the `signature_pad` instance | `ngAfterContentInit()` — inherited; wires validation templates and derives `required` | **Different semantics.** Canvas sizing now happens in `afterNextRender(() => this.resizeCanvas())` from the constructor — later than the incumbent's content-init sizing — and again on every `[height]` change. |
 | `ngOnDestroy()` — sets `canvas.width` and `canvas.height` to 0 | `ngOnDestroy()` — inherited; completes the destroy subject | **Covered.** No host action required. |
 
 ### Types
@@ -503,7 +503,7 @@ If you persisted point groups rather than images, they can be converted. Two thi
 
 First, stored points carry a `color` field at runtime even though the published `Point` type declares only `x`, `y` and `time`.
 
-Second, the two libraries use different coordinate frames. Both are in CSS pixels relative to the canvas box, but the incumbent's frame is the fixed `canvasWidth` × `canvasHeight`, while the replacement's is `logicalWidth` × `[height]` — and `logicalWidth` is **the width measured at the last `resizeCanvas()` call**, which happens once from `afterNextRender()` in the constructor unless the host calls it again. It is not the width the element happens to have when the user signs. `getPoint()` normalises every point into that stored frame:
+Second, the two libraries use different coordinate frames. Both are in CSS pixels relative to the canvas box, but the incumbent's frame is the fixed `canvasWidth` × `canvasHeight`, while the replacement's is `logicalWidth` × `[height]` — and `logicalWidth` is **the width measured at the last `resizeCanvas()` call**, which happens from `afterNextRender()` in the constructor, again on every `[height]` change, and whenever the host calls it. It is not the width the element happens to have when the user signs. `getPoint()` normalises every point into that stored frame:
 
 ```ts
 x: ((event.clientX - rect.left) * this.logicalWidth) / Math.max(1, rect.width)
@@ -642,9 +642,9 @@ No equivalent as a painted fill. The element does have a background — `.hub-si
 
 There is no width input and no programmatic way to set one. `resizeCanvas()` reads `getBoundingClientRect()` and stores the result as the private `logicalWidth`; the field is fluid and follows CSS layout, so `canvasWidth: 500` becomes a CSS rule. The consequence runs deeper than styling. Stroke coordinates are absolute in that measured frame, `toSvg()` serializes `viewBox="0 0 logicalWidth height"`, and `writeValue()` parses the paths without ever reading the `viewBox` back. **Consequence:** a stored SVG only reloads faithfully into a field of the same rendered width. Load a signature captured at 800px into a field rendered at 340px and it repaints oversized and clipped; the moment the user adds a stroke or presses undo, `toSvg()` re-serializes with a `viewBox` of 340 while the coordinates still run to 800, and the stored signature is permanently inconsistent. Nothing throws. Displaying a stored SVG as an image is unaffected — it scales — the hazard is the editable field. **Workaround:** lock the field's rendered width in CSS across every breakpoint where a signature can be edited, or treat a loaded signature as read-only and require re-capture to change it. Test any responsive editing flow at two widths before shipping.
 
-### `options.canvasHeight` → `[height]` is initialisation-only
+### `options.canvasHeight` → `[height]` resizes, but never rescales
 
-`canvas.width`, `canvas.height` and `canvas.style.height` are assigned in exactly one place — `resizeCanvas()` — which is called once, from `afterNextRender()` in the constructor. No effect watches `height()`. **Consequence:** changing `[height]` at runtime resizes nothing, while `toSvg()` reads `this.height()` live and immediately starts emitting a different `viewBox` height for unchanged geometry, distorting the stored signature vertically from that point on. **Workaround:** treat `[height]` as static. If it must change, call `resizeCanvas()` afterwards, and be aware that existing strokes are not rescaled either way.
+`[height]` is live: an effect watches it and re-runs `resizeCanvas()`, so `canvas.height`, `canvas.style.height` and the repaint follow the binding and the `viewBox` `toSvg()` emits keeps describing the surface it was captured on. What a height change does **not** do is rescale strokes already captured — they keep their coordinates, and a taller surface simply leaves more empty room beneath them. **Consequence:** the re-run is a full `resizeCanvas()`, which re-measures the width too, so changing `[height]` on a field whose rendered width has moved since the last measurement reframes the signature exactly as an explicit `resizeCanvas()` call would — see the next section. **Workaround:** change `[height]` while the field is empty whenever the strokes have to keep their place inside the box.
 
 ### `resizeCanvas()`: same name, different behaviour in both directions
 
@@ -760,15 +760,17 @@ Since 22.5.0 `[showValid]` also colours the drawing surface: the same `hub-signa
 
 `startStroke()` calls `event.preventDefault()` on pointerdown, which suppresses the focus the `tabindex` would otherwise grant. **Consequence:** a mouse or touch user never focuses the field at all, so no `focusout` ever fires and `onTouched()` runs only from `notifyValueChange()` — that is, after a completed stroke. In a pointer flow the field stays untouched until it is signed, `isInvalid` stays `false`, and no error renders until a parent `markAllAsTouched()` on submit. Any "show the error as they leave the field" behaviour you have today will not survive the swap for mouse and touch users.
 
-Keyboard is the case that does work, and it is worth stating precisely because it is the opposite of what the pointer behaviour suggests. `HubFieldControl` declares `host: { '(focusout)': 'handleBlur($event)' }`, and Angular inherits host listeners from a decorated abstract base. The canvas carries `tabindex="0"` and the three action buttons are natively focusable, so a user who tabs into the field and then tabs on fires `focusout` on the host, `handleBlur()` runs `onTouched()`, the bound control is marked touched, `isInvalid` flips, and the `@if (isInvalid)` block renders — the OnPush view updates because `ngAfterContentInit` subscribes to `control.events` and calls `markForCheck()`. Tabbing past is exactly what *does* mark it touched. (The message renders as text only; there is still no border change.)
+Keyboard is the case that does work, and it is worth stating precisely because it is the opposite of what the pointer behaviour suggests. `HubFieldControl` declares `host: { '(focusout)': 'handleBlur($event)' }`, and Angular inherits host listeners from a decorated abstract base. The canvas carries `tabindex="0"` and the three action buttons are natively focusable, so a user who tabs into the field and then tabs on fires `focusout` on the host, `handleBlur()` runs `onTouched()`, the bound control is marked touched, `isInvalid` flips, and the `@if (isInvalid)` block renders — the OnPush view updates because `ngAfterContentInit` subscribes to `control.events` and calls `markForCheck()`. Tabbing past is exactly what *does* mark it touched. (Since 22.5.0 the drawing surface takes the danger border and ring along with the message — see [The validation state shows on the drawing surface since 22.5.0](#the-validation-state-shows-on-the-drawing-surface-since-2250). Up to 22.4.0 the message rendered as text under a canvas that still looked valid.)
 
 **Workaround:** call `markAllAsTouched()` at the point your UX expects the error to appear in mouse and touch flows.
 
 Separately, the component provides no `NG_VALUE_ACCESSOR`; `HubFieldControl` self-registers by injecting `NgControl` with `{ self: true }` and assigning `this._control.valueAccessor = this`. **Consequence:** a host that applies another value-accessor directive on `<hub-signature>`, or that had provided its own accessor around `<signature-pad>`, silently loses one of the two. **Workaround:** remove any custom accessor wrapper you were using with the incumbent.
 
-### Server-side rendering is not guarded on the inbound path
+### Server-side rendering, guarded on both paths since 22.6.1
 
-`resizeCanvas()` is browser-guarded — it runs from `afterNextRender()`. `writeValue()` is not: it calls `redraw()` unconditionally, and `redraw()` reaches for `canvas.getContext('2d')`. Angular's reactive forms call `writeValue()` on every bound field during server rendering, including one whose value is `''`. **Consequence:** any application on Angular Universal / `@angular/ssr` — likely, given the Angular 21 floor — has to prove this field renders on the server before committing to it, and nothing in the package's documentation gives a reason to look. **Workaround:** render a page containing the field on the server in a spike, before the migration is scheduled. If it fails, defer the field with `@defer (on viewport)` or render a static placeholder server-side and mount the editable field on the client only.
+`resizeCanvas()` has always been browser-guarded — it runs from `afterNextRender()`. `writeValue()` was not: it calls `redraw()` on every bound value, including the `''` Angular's reactive forms write into every field during server rendering, and `redraw()` reaches for `canvas.getContext('2d')`. The server DOM shim *throws* `NotYetImplemented` from that call rather than returning null, so the null check below it never got the chance to run and a prerender of any page holding the field errored — sixteen times per full prerender of this project's own documentation site.
+
+Since 22.6.1 `redraw()` returns early outside the browser. Nothing is lost by skipping it: the canvas has no pixels on the server, and `afterNextRender()` repaints as soon as it does. **Consequence:** on 22.6.1 or later the field prerenders like any other, and no `@defer` or client-only placeholder is needed for it. **If you are pinned below 22.6.1:** defer the field with `@defer (on viewport)`, or render a static placeholder server-side and mount the editable field on the client only.
 
 ### Theming, and what it reaches
 
@@ -801,7 +803,7 @@ The case against the incumbent is that it has published nothing since 4.0.2 on 1
 ## 6. Pre-flight checklist
 
 - [ ] `npm view ng-hub-ui-signature versions` run, and the installed `types/ng-hub-ui-signature.d.ts` read, so the plan is budgeted against what is installable rather than against a changelog.
-- [ ] Angular is on `>= 21`, with `ng-hub-ui-forms >= 22.0.0` and `ng-hub-ui-utils >= 22.8.0` installed — all three, not just the first two.
+- [ ] Angular is on `>= 21`, with `ng-hub-ui-forms >= 22.31.0` and `ng-hub-ui-utils >= 22.9.0` installed — all three, not just the first two.
 - [ ] `@use 'ng-hub-ui-forms/styles';` present exactly once in the application's global stylesheet, or the helper text and validation feedback render unstyled.
 - [ ] The Sass toolchain confirmed to resolve `ng-hub-ui-signature/styles` through `node_modules` load paths — the package's `exports` map has no `./styles` subpath.
 - [ ] Every `--hub-signature-*` override written against `.hub-signature` itself, never a wrapper, and from a global stylesheet or a `ViewEncapsulation.None` component.
@@ -828,7 +830,7 @@ The case against the incumbent is that it has published nothing since 4.0.2 on 1
 - [ ] Localization wired through `provideHubTranslationAdapter()` if the application has more than one language, with `HUBUI.SIGNATURE.KEYBOARD_HINT` alongside the three action keys — plus `HUBUI.SIGNATURE.ARIA_LABEL` if any field is a bare surface with no visible `[label]`.
 - [ ] Any `[ariaLabel]` binding on a field that also has a `[label]` removed: from 22.4.0 the label is the accessible name and the input is ignored there, so leaving it in suggests a setting that does nothing.
 - [ ] `[labels]` held in a signal or class property, never as an inline object literal in the template.
-- [ ] Server-side rendering proven for a page containing the field, if the application uses `@angular/ssr` — `writeValue()` touches the canvas with no platform guard.
+- [ ] 22.6.1 or later pinned if the application uses `@angular/ssr`; below it, `writeValue()` touches the canvas with no platform guard and the prerender throws.
 - [ ] The keyboard signing path tested with the screen readers your users actually run, and the missing label association acknowledged with whoever owns accessibility compliance.
 - [ ] A decision recorded on whether a keyboard-drawn mark — a polyline, not handwriting — satisfies whatever the signature is evidence of.
 - [ ] `(drawStart)` / `(drawEnd)` handlers retyped to `HubSignatureDrawEvent`, and any pointer-specific member read behind an `instanceof PointerEvent` narrowing.

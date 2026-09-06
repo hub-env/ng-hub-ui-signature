@@ -1,8 +1,9 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { HubLabelTypes, type HubLabelType } from 'ng-hub-ui-forms';
+import { HubFormTextDirective, HubLabelTypes, HubValidationErrorDirective, type HubLabelType } from 'ng-hub-ui-forms';
 import { provideHubTranslationAdapter } from 'ng-hub-ui-utils';
 import type { HubSignatureDrawEvent } from '../../models/signature.types';
 import { HUB_SIGNATURE_CONFIG, type HubSignatureLabels } from '../../signature-config';
@@ -18,6 +19,7 @@ import { HubSignatureComponent } from './signature.component';
 		[ariaLabel]="accessibleName()"
 		[readonly]="readonlyMode()"
 		[strokeColor]="ink()"
+		[height]="surfaceHeight()"
 		[showValid]="true"
 		[validFeedback]="validMessage()"
 		(drawStart)="starts.push($event)"
@@ -32,9 +34,35 @@ class HostSignatureComponent {
 	readonly accessibleName = signal('');
 	readonly readonlyMode = signal(false);
 	readonly ink = signal('currentColor');
+	readonly surfaceHeight = signal(160);
 	readonly validMessage = signal<string | null>(null);
 	readonly starts: HubSignatureDrawEvent[] = [];
 	readonly ends: HubSignatureDrawEvent[] = [];
+}
+
+@Component({
+	standalone: true,
+	imports: [HubSignatureComponent],
+	template: `<hub-signature [label]="labelText()" [formText]="hint()" formTextType="tooltip" />`
+})
+class TooltipHostSignatureComponent {
+	readonly labelText = signal('');
+	readonly hint = signal('Draw inside the frame with a finger, a stylus or the arrow keys.');
+}
+
+@Component({
+	standalone: true,
+	imports: [HubSignatureComponent, ReactiveFormsModule, HubFormTextDirective, HubValidationErrorDirective],
+	template: `<hub-signature [formControl]="control" [formText]="hint()">
+		<ng-template hubFormText><span class="projected-form-text">Sign as it appears on your ID</span></ng-template>
+		<ng-template hubValidationError key="required">
+			<span class="projected-error">Sign before continuing</span>
+		</ng-template>
+	</hub-signature>`
+})
+class ProjectedHostSignatureComponent {
+	readonly control = new FormControl<string>('', Validators.required);
+	readonly hint = signal('');
 }
 
 /** Minimal PointerEvent stand-in: jsdom has no pointer capture. */
@@ -289,6 +317,53 @@ describe('HubSignatureComponent', () => {
 		expect(fixture.componentInstance.signature().isEmpty()).toBe(true);
 	});
 
+	it('sizes the drawing surface from the height input on the first render', () => {
+		const fixture = TestBed.createComponent(HostSignatureComponent);
+		fixture.detectChanges();
+		const canvas = fixture.nativeElement.querySelector('canvas') as HTMLCanvasElement;
+
+		expect(canvas.style.height).toBe('160px');
+		expect(canvas.height).toBe(160 * (globalThis.devicePixelRatio || 1));
+	});
+
+	it('resizes the drawing surface when the height input changes after the first render', () => {
+		const fixture = TestBed.createComponent(HostSignatureComponent);
+		fixture.detectChanges();
+		const canvas = fixture.nativeElement.querySelector('canvas') as HTMLCanvasElement;
+
+		fixture.componentInstance.surfaceHeight.set(240);
+		fixture.detectChanges();
+
+		expect(canvas.style.height).toBe('240px');
+		expect(canvas.height).toBe(240 * (globalThis.devicePixelRatio || 1));
+	});
+
+	it('keeps the stored viewBox and the surface geometry in step across a height change', () => {
+		const fixture = TestBed.createComponent(HostSignatureComponent);
+		fixture.detectChanges();
+		const canvas = fixture.nativeElement.querySelector('canvas') as HTMLCanvasElement;
+		const signature = fixture.componentInstance.signature();
+		signature.fromStrokes([
+			{
+				points: [
+					{ x: 10, y: 20, pressure: 0.5 },
+					{ x: 40, y: 60, pressure: 0.5 }
+				],
+				color: '#123456',
+				width: 2
+			}
+		]);
+
+		fixture.componentInstance.surfaceHeight.set(240);
+		fixture.detectChanges();
+
+		// toSvg() reads height() live, so a surface left at the old pixel height would file
+		// unchanged geometry under a taller viewBox — a document that no longer describes the
+		// surface the ink was drawn on.
+		expect(signature.toSvg()).toContain('viewBox="0 0 320 240"');
+		expect(canvas.style.height).toBe('240px');
+	});
+
 	it('describes the keyboard interaction through aria-describedby', () => {
 		const fixture = TestBed.createComponent(HostSignatureComponent);
 		fixture.detectChanges();
@@ -500,5 +575,67 @@ describe('HubSignatureComponent', () => {
 		expect(fixture.nativeElement.querySelector('.hub-field__feedback--valid')?.textContent.trim()).toBe(
 			'Signature captured'
 		);
+	});
+
+	it('keeps the helper-text mark on a bare surface with no visible label', () => {
+		const fixture = TestBed.createComponent(TooltipHostSignatureComponent);
+		fixture.detectChanges();
+
+		const hint = fixture.nativeElement.querySelector('.hub-field__hint') as HTMLButtonElement | null;
+
+		// The block below stands down in tooltip mode, so the mark is the only place the text is
+		// left: a label-less field losing the mark loses its helper text entirely.
+		expect(fixture.nativeElement.querySelector('label')).toBeNull();
+		expect(hint).not.toBeNull();
+		expect(hint?.getAttribute('aria-label')).toBe(fixture.componentInstance.hint());
+		expect(fixture.nativeElement.querySelector('.hub-field__form-text')).toBeNull();
+	});
+
+	it('pairs the helper-text mark with the label when there is one', () => {
+		const fixture = TestBed.createComponent(TooltipHostSignatureComponent);
+		fixture.componentInstance.labelText.set('Account holder signature');
+		fixture.detectChanges();
+
+		const row = fixture.nativeElement.querySelector('.hub-field__label-row') as HTMLElement | null;
+
+		expect(row?.querySelector('label')?.textContent?.trim()).toContain('Account holder signature');
+		expect(row?.querySelector('.hub-field__hint')).not.toBeNull();
+	});
+
+	it('renders a projected hubFormText template as the helper text', () => {
+		const fixture = TestBed.createComponent(ProjectedHostSignatureComponent);
+		fixture.detectChanges();
+
+		const formText = fixture.nativeElement.querySelector('.hub-field__form-text') as HTMLElement | null;
+
+		expect(formText).not.toBeNull();
+		expect(formText?.querySelector('.projected-form-text')?.textContent?.trim()).toBe('Sign as it appears on your ID');
+	});
+
+	it('lets a projected hubValidationError template replace the default message', () => {
+		const fixture = TestBed.createComponent(ProjectedHostSignatureComponent);
+		fixture.detectChanges();
+
+		fixture.componentInstance.control.markAsTouched();
+		fixture.detectChanges();
+
+		const feedback = fixture.nativeElement.querySelector('.hub-field__feedback') as HTMLElement | null;
+
+		expect(feedback?.querySelector('.projected-error')?.textContent?.trim()).toBe('Sign before continuing');
+		expect(feedback?.textContent).not.toContain('This field is required.');
+	});
+
+	it('falls back to the default message for an error key with no projected template', () => {
+		const fixture = TestBed.createComponent(ProjectedHostSignatureComponent);
+		fixture.detectChanges();
+
+		fixture.componentInstance.control.setErrors({ email: true });
+		fixture.componentInstance.control.markAsTouched();
+		fixture.detectChanges();
+
+		const feedback = fixture.nativeElement.querySelector('.hub-field__feedback') as HTMLElement | null;
+
+		expect(feedback?.querySelector('.projected-error')).toBeNull();
+		expect(feedback?.textContent).toContain('Enter a valid email address.');
 	});
 });

@@ -12,11 +12,12 @@ import {
 	output,
 	PLATFORM_ID,
 	signal,
+	untracked,
 	viewChild,
 	ViewEncapsulation
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { isPlatformBrowser, KeyValuePipe } from '@angular/common';
+import { isPlatformBrowser, KeyValuePipe, NgTemplateOutlet } from '@angular/common';
 import { HubTooltipDirective } from 'ng-hub-ui-utils';
 import { HubLabelType, HubLabelTypes } from 'ng-hub-ui-forms';
 import { HubFieldControl } from 'ng-hub-ui-forms';
@@ -63,7 +64,7 @@ function clamp(value: number, min: number, max: number): number {
 @Component({
 	selector: 'hub-signature',
 	standalone: true,
-	imports: [KeyValuePipe, HubTooltipDirective],
+	imports: [NgTemplateOutlet, KeyValuePipe, HubTooltipDirective],
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	encapsulation: ViewEncapsulation.None,
 	templateUrl: './signature.component.html',
@@ -83,6 +84,9 @@ export class HubSignatureComponent extends HubFieldControl {
 	private readonly redoStrokes = signal<HubSignatureStroke[]>([]);
 	private readonly drawingStroke = signal<HubSignatureStroke | null>(null);
 	private readonly logicalWidth = signal(320);
+
+	/** Whether the surface exists yet, so the height effect stays quiet until there is one to resize. */
+	private readonly canvasRendered = signal(false);
 
 	/** Keyboard pen position in logical coordinates; null until the surface is first focused. */
 	private readonly caret = signal<{ x: number; y: number } | null>(null);
@@ -199,7 +203,18 @@ export class HubSignatureComponent extends HubFieldControl {
 				);
 			onCleanup(() => subscriptions.forEach((subscription) => subscription.unsubscribe()));
 		});
-		afterNextRender(() => this.resizeCanvas());
+		// The bitmap geometry lives in JavaScript, so nothing repaints the surface when [height]
+		// changes: without this the canvas keeps its old pixels while toSvg() already reports the
+		// new viewBox, and the stored signature comes back stretched. The flag is read untracked
+		// because the first paint belongs to afterNextRender below, not to this effect.
+		effect(() => {
+			this.height();
+			if (untracked(this.canvasRendered)) this.resizeCanvas();
+		});
+		afterNextRender(() => {
+			this.canvasRendered.set(true);
+			this.resizeCanvas();
+		});
 	}
 
 	/** Returns a fallback while a reactive label source waits for its first translation. */

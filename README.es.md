@@ -4,11 +4,34 @@
 
 Campo de firma para formularios Angular respaldado por SVG. Registra ratón, táctil y lápiz mediante Pointer Events —o flechas y Espacio, para firmar sin puntero—, guarda un SVG escalable en el modelo del formulario y puede exportar el lienzo a PNG.
 
+## Migrar desde angular2-signaturepad
+
+`angular2-signaturepad` no publica nada desde febrero de 2022. **[Lee la guía de migración](./MIGRATION.md)** (en inglés): recorre la API completa, trae código que funciona y dice sin rodeos qué no se puede trasladar: las firmas guardadas como data URL en PNG no se pueden recargar para editarlas, y un SVG guardado solo se recarga fielmente en un campo renderizado con el mismo ancho.
+
 ## Instalación
 
 ```bash
-npm install ng-hub-ui-signature ng-hub-ui-forms
+npm install ng-hub-ui-signature ng-hub-ui-forms ng-hub-ui-utils
 ```
+
+Después carga la hoja de estilos de forms una sola vez, en los estilos globales de la aplicación. El
+elemento raíz del campo es `class="hub-field hub-signature"` y todo lo que rodea al lienzo —la fila
+de la etiqueta, el texto de ayuda, los mensajes de validación y la interrogación que los abre— está
+definido en `ng-hub-ui-forms`, no en la hoja de la propia firma. Sin esta línea el lienzo se ve bien
+y lo demás no: la ayuda y los errores caen a texto sin estilo, y la interrogación, cuyo símbolo y
+cuyo círculo salen de esa hoja, se queda en un botón vacío.
+
+```scss
+// styles.scss
+@use 'ng-hub-ui-forms/styles';
+
+// Solo si usas formTextType="tooltip": el bocadillo se añade al <body>, fuera del alcance de
+// cualquier cosa que declare la hoja anterior.
+@use 'ng-hub-ui-utils/styles/tooltip';
+```
+
+`@use 'ng-hub-ui-signature/styles'` no sustituye a ninguna de las dos: ese punto de entrada reexporta
+el mixin de tematización que se describe más abajo y no emite nada de esa estructura.
 
 ## Uso
 
@@ -24,6 +47,33 @@ export class ContractFormComponent {}
 ```
 
 El valor del control es un string SVG. Usa `toDataUrl('image/png')` para exportación bitmap, o `clear()`, `undo()` y `redo()` para controlar el campo mediante código.
+
+## Entradas
+
+| Entrada | Tipo | Por defecto | Qué hace |
+| --- | --- | --- | --- |
+| `label` | `string` | `''` | Etiqueta visible, y nombre accesible de la superficie. Ver [Cómo se nombra el campo](#cómo-se-nombra-el-campo). |
+| `labelType` | `HubLabelType` | `'stacked'` | `'horizontal'` pone la etiqueta en una primera columna junto a la superficie. `'floating'` cae a apilada. |
+| `formText` | `string` | `''` | Texto de ayuda. Una plantilla `<ng-template hubFormText>` proyectada lo sustituye por marcado. |
+| `formTextType` | `'bottom' \| 'tooltip'` | `'bottom'` | Dónde va la ayuda: bajo la superficie, o tras una `?` al final de la fila de la etiqueta. |
+| `height` | `number` | `160` | Altura lógica de la superficie en píxeles CSS. Es viva: el bitmap y el `viewBox` guardado la siguen. |
+| `strokeColor` | `string` | `'currentColor'` | Tinta que se guarda en los trazos nuevos, resuelta a un color concreto antes de capturarlos. |
+| `strokeWidth` | `number` | `2` | Grosor base que se guarda en los trazos nuevos. |
+| `readonly` | `boolean` | `false` | Mantiene la firma legible y enfocable, y rechaza trazos nuevos. |
+| `controls` | `boolean` | `true` | Muestra la fila integrada de borrar / deshacer / rehacer. |
+| `ariaLabel` | `string` | `''` | Nombre accesible de una superficie **sin** `[label]` visible; se ignora si la hay. |
+| `labels` | `Partial<HubSignatureLabels>` | `{}` | Sobrescritura por campo de las etiquetas de acción traducidas. |
+| `classlist` | `string` | `''` | Clases extra en el elemento anfitrión, `<hub-signature>`, no en el lienzo. |
+| `formControlName` | `string` | — | Nombre del control dentro del grupo de formulario. Sigue haciendo falta importar `ReactiveFormsModule`. |
+| `required` | `boolean \| null` | `null` | De doble vía. Con un enlace reactivo se deriva de los validadores del control, así que solo se fija a mano fuera de ahí. |
+| `disabled` | `boolean` | `false` | De doble vía, y lo escribe `setDisabledState()`. En un campo reactivo, mejor `control.disable()`. |
+| `showValid` | `boolean` | `false` | Estado de éxito opcional; por defecto toma el global de `provideHubForms({ showValid })`. |
+| `validFeedback` | `string \| null` | `null` | Mensaje de éxito, visible solo con `[showValid]` activo y el campo tocado y válido. |
+| `invalidFeedbackTemplateFn` | `((key: string, value: any) => string) \| null` | `null` | Sobrescritura por campo del constructor de mensajes de error. |
+
+`height`, `strokeColor` y `strokeWidth` describen la superficie y la pluma; las seis últimas se
+heredan del contrato de campo de `ng-hub-ui-forms`, y por eso se comportan exactamente igual que en
+`hub-input`.
 
 ## Preguntar qué contiene el campo
 
