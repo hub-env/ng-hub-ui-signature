@@ -1,3 +1,8 @@
+// Token defaults at zero specificity, so `hub-signature-theme()` — and any consumer rule
+// written against `.hub-signature` — wins without having to out-specify the library.
+//
+// `.hub-signature` is the component's OWN root div, not its host element, so every rule in
+// this sheet is reached by emulated encapsulation and none of it needs to go global.
 :where(.hub-signature) {
 	--hub-signature-bg: var(--hub-input-bg, var(--hub-sys-surface, #fff));
 	--hub-signature-color: var(--hub-input-color, var(--hub-sys-text-primary, #212529));

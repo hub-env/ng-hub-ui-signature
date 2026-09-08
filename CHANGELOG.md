@@ -1,5 +1,28 @@
 # Changelog
 
+## [22.8.0] - 2026-09-08
+
+### Changed
+
+- **The field keeps its stylesheet to itself.** `<hub-signature>` shipped with
+  `ViewEncapsulation.None`, which publishes every rule it emits into the application's global
+  cascade, where it competes with rules the library never sees and cannot be removed by anyone who
+  did not know it was there. None of the four reasons `CODING_RULES.md` allows for it applied: every
+  selector in the sheet names `.hub-signature`, and that is the component's **own root element**,
+  drawn by its own template — not the host, not projected content — so emulated encapsulation
+  reaches all of it. Not one selector had to move. What you write to theme the field does not move
+  either: `.hub-signature` is still on an element your global stylesheet matches, so both a
+  hand-written rule and `hub-signature-theme()` land exactly where they did. `BREAKING_CHANGES.md`
+  records the one case that does change.
+
+### Added
+
+- **`ng-hub-ui-ds` is declared as an optional peer dependency** (`>=22.0.0`). The token defaults
+  climb `--hub-input-*` and `--hub-label-*` first and the `--hub-sys-*` / `--hub-ref-*` ladder after
+  that, and nothing in the manifest said so — so a consumer reading the package on npm could not
+  tell that installing the token package is what gives the field the family palette and its dark
+  mode. It stays optional: every token ends in a literal fallback.
+
 ## [22.7.0] - 2026-09-06
 
 ### Added

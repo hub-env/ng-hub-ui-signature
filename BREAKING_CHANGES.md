@@ -6,6 +6,36 @@ This file documents breaking changes and migration steps for `ng-hub-ui-signatur
 > compatibility. A breaking change therefore ships as a **minor**, and this file is the only warning
 > you get — read it before upgrading within a major line.
 
+## [22.8.0]
+
+### The stylesheet no longer reaches outside the field
+
+**What changed.** `<hub-signature>` dropped `ViewEncapsulation.None`. Every rule it emits now
+carries the component's own marker attribute, so `.hub-signature__canvas` ships as
+`.hub-signature__canvas[_ngcontent-…]`. Not one selector in the sheet had to be rewritten: they all
+name elements the component's own template draws.
+
+**Why.** An unencapsulated stylesheet is published into the application's global cascade, where it
+competes with rules the library never sees and cannot be removed by anyone who did not know it was
+there. `CODING_RULES.md` allows four reasons for that and this field had none of them.
+
+**What you have to do.** Nothing, unless you have a rule of your own aimed at the field's internals.
+Two cases change, and neither reports itself:
+
+- A rule that reached an inner element by adding a single class — `.contract-panel
+  .hub-signature__canvas { … }` — now ties with the library at (0,2,0) instead of beating it at
+  (0,2,0) against (0,1,0), and loses on source order, because component styles are injected after
+  the stylesheet your application ships. Add another level, or move the change into the tokens.
+- Markup of your own carrying the library's class names is no longer painted by them.
+
+Theming through the tokens is unaffected, which is the route `MIGRATION.md` has always pointed at:
+`.hub-signature` is the field's root element, your global stylesheet matches it as it always did,
+and `hub-signature-theme()` emits exactly that selector.
+
+**If you do nothing.** The field renders as it always has. Only a stylesheet of yours that reached
+into its internals is affected, and it fails by having no effect — nothing warns, so check any rule
+you wrote against a `.hub-signature__*` class.
+
 ## [22.6.0]
 
 ### `ng-hub-ui-forms` must be at least 22.31.0

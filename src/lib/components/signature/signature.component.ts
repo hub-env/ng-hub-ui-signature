@@ -13,8 +13,7 @@ import {
 	PLATFORM_ID,
 	signal,
 	untracked,
-	viewChild,
-	ViewEncapsulation
+	viewChild
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { isPlatformBrowser, KeyValuePipe, NgTemplateOutlet } from '@angular/common';
@@ -66,7 +65,6 @@ function clamp(value: number, min: number, max: number): number {
 	standalone: true,
 	imports: [NgTemplateOutlet, KeyValuePipe, HubTooltipDirective],
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	encapsulation: ViewEncapsulation.None,
 	templateUrl: './signature.component.html',
 	styleUrl: './signature.component.scss',
 	host: { '[class]': 'classlist()', '[class.hub-signature-host]': 'true' }
