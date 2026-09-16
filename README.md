@@ -2,6 +2,8 @@
 
 SVG-backed signature field for Angular forms. It records mouse, touch and pen input through Pointer Events — or arrow keys and Space, for signing without a pointer — stores a scalable SVG in the form model and can export the rendered canvas as PNG.
 
+Part of [Hub UI](https://hubui.dev/en/). Documentation and live examples: [hubui.dev/en/signature/overview/](https://hubui.dev/en/signature/overview/). Issues, roadmap and contributing guide: [github.com/hub-env/hub-ui](https://github.com/hub-env/hub-ui).
+
 ## Migrating from angular2-signaturepad
 
 `angular2-signaturepad` last published in February 2022. **[Read the migration guide](./MIGRATION.md)** — it maps the full API, shows working code, and states plainly what does not carry over: signatures stored as PNG data URLs cannot be reloaded for editing, and a stored SVG only reloads faithfully into a field rendered at the same width.

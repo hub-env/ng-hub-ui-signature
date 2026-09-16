@@ -6,10 +6,10 @@
 	"author": "Carlos Morcillo <carlos.morcillo@me.com> (https://www.carlosmorcillo.com)",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/carlos-morcillo/ng-hub-ui-signature.git"
+		"url": "git+https://github.com/hub-env/ng-hub-ui-signature.git"
 	},
 	"bugs": {
-		"url": "https://github.com/carlos-morcillo/ng-hub-ui-signature/issues"
+		"url": "https://github.com/hub-env/hub-ui/issues"
 	},
 	"homepage": "https://hubui.dev/en/signature/overview/",
 	"keywords": [

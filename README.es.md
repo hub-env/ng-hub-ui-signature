@@ -4,6 +4,8 @@
 
 Campo de firma para formularios Angular respaldado por SVG. Registra ratón, táctil y lápiz mediante Pointer Events —o flechas y Espacio, para firmar sin puntero—, guarda un SVG escalable en el modelo del formulario y puede exportar el lienzo a PNG.
 
+Forma parte de [Hub UI](https://hubui.dev/es/). Documentación y ejemplos en vivo: [hubui.dev/es/signature/overview/](https://hubui.dev/es/signature/overview/). Incidencias, roadmap y guía para contribuir: [github.com/hub-env/hub-ui](https://github.com/hub-env/hub-ui).
+
 ## Migrar desde angular2-signaturepad
 
 `angular2-signaturepad` no publica nada desde febrero de 2022. **[Lee la guía de migración](./MIGRATION.md)** (en inglés): recorre la API completa, trae código que funciona y dice sin rodeos qué no se puede trasladar: las firmas guardadas como data URL en PNG no se pueden recargar para editarlas, y un SVG guardado solo se recarga fielmente en un campo renderizado con el mismo ancho.
