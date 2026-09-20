@@ -842,7 +842,7 @@ The case against the incumbent is that it has published nothing since 4.0.2 on 1
 
 ## Reporting a problem
 
-- **Issues:** <https://github.com/carlos-morcillo/ng-hub-ui-signature/issues>
+- **Issues:** <https://github.com/hub-env/hub-ui/issues>
 - **Documentation:** <https://hubui.dev/en/signature/overview/>
 
 A useful report includes the `ng-hub-ui-signature`, `ng-hub-ui-forms`, `ng-hub-ui-utils` and `@angular/core` versions, the template fragment and component code, and — when the problem concerns stored data — a sample of the value the form control holds. If you are migrating, say so and include the `angular2-signaturepad` code being replaced.
