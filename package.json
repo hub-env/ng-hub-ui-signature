@@ -3,7 +3,7 @@
 	"version": "22.8.1",
 	"license": "MIT",
 	"description": "Accessible SVG-backed signature field for Angular forms, part of the ng-hub-ui family.",
-	"author": "Carlos Morcillo <carlos.morcillo@me.com> (https://www.carlosmorcillo.com)",
+	"author": "Carlos Morcillo Fernández <carlos.morcillo@me.com> (https://www.carlosmorcillo.com)",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/hub-env/ng-hub-ui-signature.git"
