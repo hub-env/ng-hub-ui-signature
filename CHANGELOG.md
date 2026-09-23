@@ -1,5 +1,19 @@
 # Changelog
 
+## [22.8.2] - 2026-09-23
+
+### Changed
+
+- **The Angular peer range now says what the code needs, not a number somebody picked.** It asked
+  for `>=21.0.0`, which nothing in this package justified. The newest Angular API the source uses is
+  the signal queries, which shipped in 17.2, and the partial-Ivy output the Angular linker checks carries no
+  marker above it. The range is `>=17.2.0`, so applications on those versions can install this
+  library instead of being turned away by a range that was never measured.
+- **The floor is derived and checked from now on.** `npm run peers:floors` works it out from three
+  things that can be verified — the Angular APIs the source calls, the `minVersion` markers in the
+  compiled output, and the Angular types that reach the published `.d.ts` — and CI fails when a
+  declaration drifts away from it again.
+
 ## [22.8.1] - 2026-09-16
 
 ### Changed
