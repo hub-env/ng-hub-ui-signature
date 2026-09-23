@@ -1,5 +1,19 @@
 # Changelog
 
+## [22.9.0] - 2026-09-23
+
+### Changed
+
+- **BREAKING — the Angular floor rises from `17.2.0` to `21.0.0`.** The old range was
+  measured from the source alone, and it requires `ng-hub-ui-forms`, whose own floor is Angular 21, so npm refuses the install below that however this package is written. An application below the new floor could install this
+  package and then fail to build, with an error that pointed at Angular rather than here; it now
+  gets the peer warning it should always have had. Nothing that worked stops working. See
+  `BREAKING_CHANGES.md`.
+- **The floor is proved by running it now, not only derived.** `npm run floors:matrix` builds a real
+  project pinned to the oldest Angular this package claims, installs it there, typechecks the
+  published types against that version's `@angular/*` and runs that version's linker over the
+  compiled output. It is what found this.
+
 ## [22.8.2] - 2026-09-23
 
 ### Changed
@@ -57,12 +71,12 @@
   compiles and silently draws nothing is the worst shape a gap can take, and it is the third
   time this field has taken it, after `[validFeedback]` in 22.3.0 and `formTextType` in 22.6.0.
 
-  The helper block now renders the template when one is projected and falls back to the string
-  otherwise, and each validation error resolves its own template before reaching the default
-  message — the same two `ngTemplateOutlet` pairs the rest of the family uses, so a consumer
-  who wrote the markup for `hub-input` can move it to `hub-signature` unchanged. Both
-  directives are public exports of `ng-hub-ui-forms`, which is exactly why they were reached
-  for here.
+    The helper block now renders the template when one is projected and falls back to the string
+    otherwise, and each validation error resolves its own template before reaching the default
+    message — the same two `ngTemplateOutlet` pairs the rest of the family uses, so a consumer
+    who wrote the markup for `hub-input` can move it to `hub-signature` unchanged. Both
+    directives are public exports of `ng-hub-ui-forms`, which is exactly why they were reached
+    for here.
 
 ### Changed
 
@@ -113,12 +127,12 @@
   declaration. `HubTooltipDirective` arrived with utils 22.9.0; against 22.8.x the import
   resolves to nothing and the directive sits `undefined` in the `imports` array.
 
-  The ranges being wide did not make them permissive, it made them silent. forms 22.31.0 is
-  days old, so an existing consumer adding this field keeps the forms version it already has,
-  npm sees the range satisfied and upgrades nothing, and the application fails to compile on a
-  base class member that is simply not there. The floors are now `>=22.31.0` and `>=22.9.0`,
-  which is what the rest of the family already does — `ng-hub-ui-forms` states its real utils
-  floor rather than the oldest major.
+    The ranges being wide did not make them permissive, it made them silent. forms 22.31.0 is
+    days old, so an existing consumer adding this field keeps the forms version it already has,
+    npm sees the range satisfied and upgrades nothing, and the application fails to compile on a
+    base class member that is simply not there. The floors are now `>=22.31.0` and `>=22.9.0`,
+    which is what the rest of the family already does — `ng-hub-ui-forms` states its real utils
+    floor rather than the oldest major.
 
 - **The helper-text mark survives a field with no visible label.** `formTextType="tooltip"`
   hangs the helper text behind a question mark at the end of the label row, and the whole row
@@ -128,10 +142,10 @@
   mode was on. The helper text was accepted, resolved, and rendered nowhere at all, so the only
   way out was to give the field a visible label it was deliberately built without.
 
-  The row is now rendered because the hint is due, not because the label is, and the label
-  moves into it only when there is one. That is the rule `hub-input` and `hub-segmented`
-  already state in their own templates; the divergence here was accidental, not a decision a
-  canvas needed.
+    The row is now rendered because the hint is due, not because the label is, and the label
+    moves into it only when there is one. That is the rule `hub-input` and `hub-segmented`
+    already state in their own templates; the divergence here was accidental, not a decision a
+    canvas needed.
 
 - **`[height]` resizes the surface it already reported.** `canvas.height`, `canvas.style.height`
   and the repaint were written in one place only — `resizeCanvas()`, called once from
@@ -142,10 +156,10 @@
   binding looked reactive because it is a signal input, and the only way to keep the archive honest
   was to treat it as fixed or to call `resizeCanvas()` by hand after every change.
 
-  An effect now watches `height()` and re-runs `resizeCanvas()`, which is the call the guide used
-  to ask the consumer to make. Strokes are still never rescaled — they keep the coordinates they
-  were captured with, and the taller surface simply leaves more room beneath them — so change the
-  height while the field is empty whenever the ink has to keep its place inside the box.
+    An effect now watches `height()` and re-runs `resizeCanvas()`, which is the call the guide used
+    to ask the consumer to make. Strokes are still never rescaled — they keep the coordinates they
+    were captured with, and the taller surface simply leaves more room beneath them — so change the
+    height while the field is empty whenever the ink has to keep its place inside the box.
 
 - **The README states the stylesheet setup step.** Install said
   `npm install ng-hub-ui-signature ng-hub-ui-forms` and stopped there, while everything around the
@@ -172,12 +186,12 @@
 
 - **Server-side rendering no longer throws.** `writeValue()` repaints the canvas, and it runs
   whenever a reactive form binds a value — including during prerendering, where the server DOM
-  shim *throws* `NotYetImplemented` from `canvas.getContext('2d')` instead of returning null, so
+  shim _throws_ `NotYetImplemented` from `canvas.getContext('2d')` instead of returning null, so
   the existing null check never got the chance to run. Measured on the documentation site, this
   produced 16 errors per full prerender. `redraw()` now returns early outside the browser.
 
     Nothing is lost by skipping it: the canvas has no pixels on the server, and the existing
-  `afterNextRender` hook already repaints as soon as it does. No API, type or style changes.
+    `afterNextRender` hook already repaints as soon as it does. No API, type or style changes.
 
 ## [22.6.0] - 2026-09-02
 
@@ -189,9 +203,9 @@
   unconditionally and drew no question mark. The compiler accepted `formTextType="tooltip"` on a
   `<hub-signature>` and the page ignored it, which is the worst shape a gap can take.
 
-  The mark now sits in a `.hub-field__label-row` beside the label rather than inside it. That is
-  not decoration: clicking this label focuses the drawing surface, so a button nested in it would
-  open the tooltip and put the pen in the reader's hand at once.
+    The mark now sits in a `.hub-field__label-row` beside the label rather than inside it. That is
+    not decoration: clicking this label focuses the drawing surface, so a button nested in it would
+    open the tooltip and put the pen in the reader's hand at once.
 
 ### Fixed
 
@@ -206,21 +220,21 @@
 
 - **`[labelType]` is read.** It was declared, compiled, type-checked and never looked at: the template toggled only `--readonly`, `--disabled`, `--invalid` and `--valid`, so a team migrating a horizontal form bound the input, saw a stacked label, and went hunting through `ng-hub-ui-forms` for a bug that was not there. `horizontal` now places the label in a first grid column beside the drawing surface — capped and ellipsized at `--hub-form-label-horizontal-max-width` — with the action row, helper text and validation feedback stacked in the second, which is the shape the sibling fields produce.
 
-  The layout lives in this component's own stylesheet under `.hub-signature--horizontal` rather than borrowing `.hub-field--horizontal` from the forms sheet. That grid places `> .hub-field__label` and `> .hub-field__body`, neither of which this template has, and both sheets would then set `gap` on the same element at identical specificity — a race decided by stylesheet injection order, which is not stable between the dev server and a production build. The same `--hub-form-*` tokens are honoured, so the result lines up with the fields around it.
+    The layout lives in this component's own stylesheet under `.hub-signature--horizontal` rather than borrowing `.hub-field--horizontal` from the forms sheet. That grid places `> .hub-field__label` and `> .hub-field__body`, neither of which this template has, and both sheets would then set `gap` on the same element at identical specificity — a race decided by stylesheet injection order, which is not stable between the dev server and a production build. The same `--hub-form-*` tokens are honoured, so the result lines up with the fields around it.
 
-  **`floating` still falls back to `stacked`, deliberately.** A floating label reuses the space an empty text control's value would occupy and is driven by `:placeholder-shown`; a canvas has neither, and a label parked inside the box would sit on top of the ink the moment anyone signed. The family's other non-text fields — `hub-slider`, `hub-segmented`, `hub-otp-input` — take the same position while still accepting the shared `HubLabelType`.
+    **`floating` still falls back to `stacked`, deliberately.** A floating label reuses the space an empty text control's value would occupy and is driven by `:placeholder-shown`; a canvas has neither, and a label parked inside the box would sit on top of the ink the moment anyone signed. The family's other non-text fields — `hub-slider`, `hub-segmented`, `hub-otp-input` — take the same position while still accepting the shared `HubLabelType`.
 
 - **The validation state shows on the drawing surface.** `.hub-signature--invalid` and `.hub-signature--valid` were bound on the root and styled by nothing, so a required-but-empty signature printed an error message under a canvas that looked exactly like a valid one. Every other field of the family turns red; this one did not, and on a long form the message scrolls out of view leaving a submit button that refuses to work for no visible reason. The canvas now takes the danger border and ring when touched and invalid, and the success pair when `[showValid]` is on and the field is touched and valid.
 
-  The colours come from the shared `--hub-form-invalid-*` / `--hub-form-valid-*` contract rather than new `--hub-signature-*` slots, because that is where the family keeps validation — `_field.scss` styles `.hub-field__control--invalid` from exactly these tokens, and a signature-only slot would fragment a decision that belongs to the form.
+    The colours come from the shared `--hub-form-invalid-*` / `--hub-form-valid-*` contract rather than new `--hub-signature-*` slots, because that is where the family keeps validation — `_field.scss` styles `.hub-field__control--invalid` from exactly these tokens, and a signature-only slot would fragment a decision that belongs to the form.
 
-  **If you wrote the workaround the migration guide used to recommend, delete it.** Your rule and the component's now have identical specificity, so which wins is decided by injection order: a customised colour can silently stop applying in a production build while still working in the dev server. Set `--hub-form-invalid-border-color` instead.
+    **If you wrote the workaround the migration guide used to recommend, delete it.** Your rule and the component's now have identical specificity, so which wins is decided by injection order: a customised colour can silently stop applying in a production build while still working in the dev server. Set `--hub-form-invalid-border-color` instead.
 
 ### Added
 
 - **A live theming demo on the library page**, exercising all eleven `--hub-signature-*` slots through `hub-signature-theme()`. The mixin had shipped since 22.0.0 with nothing to look at, so its six newest parameters could only be read about.
 
-  Building it surfaced a trap now documented in `MIGRATION.md`: **setting the tokens on a wrapper element does nothing.** The component declares all eleven slots on the field element itself through `:where(.hub-signature)`, and a value declared on an element always beats one inherited from an ancestor — specificity never enters into it, because they are different elements. This is precisely why the mixin emits `<your scope> :where(.hub-signature)` rather than relying on inheritance, and it also means a rule written inside a component with emulated view encapsulation never matches, since Angular rewrites it with an `_ngcontent` attribute the field's DOM does not carry.
+    Building it surfaced a trap now documented in `MIGRATION.md`: **setting the tokens on a wrapper element does nothing.** The component declares all eleven slots on the field element itself through `:where(.hub-signature)`, and a value declared on an element always beats one inherited from an ancestor — specificity never enters into it, because they are different elements. This is precisely why the mixin emits `<your scope> :where(.hub-signature)` rather than relying on inheritance, and it also means a rule written inside a component with emulated view encapsulation never matches, since Angular rewrites it with an `_ngcontent` attribute the field's DOM does not carry.
 
 ## [22.4.0] - 2026-09-01
 
@@ -228,19 +242,19 @@
 
 - **The visible label now names the drawing surface.** The template rendered `<label for>` pointing at the canvas, and `for` associates only with labelable elements — `button`, `input`, `meter`, `output`, `progress`, `select`, `textarea`. A `<canvas>` is none of them, so the attribute was inert: no association existed, clicking the label did nothing, and the accessible name came entirely from `[ariaLabel]`. The surface is now named with `aria-labelledby`, the only mechanism that works on a non-labelable element and the only one unaffected by `role="application"`.
 
-  The `for` attribute is gone rather than left beside the new wiring, because an attribute that claims an association the browser never makes is worse than no attribute at all. Clicking the label focuses the surface instead, which is the half of the label contract that was actually missing.
+    The `for` attribute is gone rather than left beside the new wiring, because an attribute that claims an association the browser never makes is worse than no attribute at all. Clicking the label focuses the surface instead, which is the half of the label contract that was actually missing.
 
-  `aria-labelledby` and `aria-label` are now mutually exclusive on the canvas. They are not additive: `aria-labelledby` outranks `aria-label` outright in the accessible-name computation, so emitting both would leave one of them permanently unreachable and mislead anyone reading the DOM. A field with a `[label]` carries only `aria-labelledby`; a field without one carries only `aria-label`. The required asterisk stays `aria-hidden` and out of the computed name.
+    `aria-labelledby` and `aria-label` are now mutually exclusive on the canvas. They are not additive: `aria-labelledby` outranks `aria-label` outright in the accessible-name computation, so emitting both would leave one of them permanently unreachable and mislead anyone reading the DOM. A field with a `[label]` carries only `aria-labelledby`; a field without one carries only `aria-label`. The required asterisk stays `aria-hidden` and out of the computed name.
 
 - **`[ariaLabel]` goes through the translation dictionary.** It was an `input<string>('Signature')` with a hardcoded English literal and no `HUBUI.SIGNATURE.*` key behind it, so an application that localized every button through the shared adapter still had its drawing surface announce itself in English. It now resolves like every other piece of text the component owns: the explicit input first, then `[labels]` / `provideHubSignature()`, then `HUBUI.SIGNATURE.ARIA_LABEL`, then the English fallback.
 
-  Its default changed from `'Signature'` to `''` so that "not set" is distinguishable from "set to the old default"; the resolved name is still `Signature` when nothing else supplies one.
+    Its default changed from `'Signature'` to `''` so that "not set" is distinguishable from "set to the old default"; the resolved name is still `Signature` when nothing else supplies one.
 
 ### Changed
 
-- **The accessible name comes from `[label]` when there is one, and `[ariaLabel]` is the fallback for a bare surface.** This is the part that actually closes WCAG 2.5.3 (Label in Name): translating `[ariaLabel]` would merely have made it *possible* to keep the visible label and the announced name in agreement, still requiring every consumer to pass the same string twice on every field and to remember it forever. Deriving the name from the label makes disagreement impossible — they are the same node. `[ariaLabel]` is now consulted only where there is genuinely nothing to point at: a surface with no visible label, in a layout that labels it some other way.
+- **The accessible name comes from `[label]` when there is one, and `[ariaLabel]` is the fallback for a bare surface.** This is the part that actually closes WCAG 2.5.3 (Label in Name): translating `[ariaLabel]` would merely have made it _possible_ to keep the visible label and the announced name in agreement, still requiring every consumer to pass the same string twice on every field and to remember it forever. Deriving the name from the label makes disagreement impossible — they are the same node. `[ariaLabel]` is now consulted only where there is genuinely nothing to point at: a surface with no visible label, in a layout that labels it some other way.
 
-  **Binding `[ariaLabel]` on a field that also has a `[label]` no longer does anything.** Remove those bindings rather than leaving a setting that looks live and is not.
+    **Binding `[ariaLabel]` on a field that also has a `[label]` no longer does anything.** Remove those bindings rather than leaving a setting that looks live and is not.
 
 - **`HubSignatureLabels` and `HubSignatureResolvedLabels` gained a required `ariaLabel` member.** Everything the library accepts takes a `Partial<…>`, so overrides are unaffected; only a fully annotated label object has to change. **Breaking**; see `BREAKING_CHANGES.md`.
 
@@ -250,9 +264,9 @@
 
 - **A keyboard path to sign.** The canvas has carried `tabindex="0"` since 22.0.0 and bound nothing but pointer events, so the field was focusable and unusable: a required control no keyboard-only user could satisfy, under a package description promising an accessible signature field. Arrow keys now carry a visible pen across the surface — Shift for a coarser step — Space or Enter lower and lift it, and Escape abandons the stroke in progress. It is not a second class of stroke: the keyboard goes through the same internal begin/commit pair the pointer does, so it yields the same `HubSignatureStroke`, the same `toSvg()` output and the same reported value.
 
-  The interaction is modal — put the pen down, move, lift — rather than hold-a-key-to-draw, because key repeat is throttled by the operating system (points would be sampled at a rate the library does not control) and holding one key while pressing another is beyond many of the motor abilities this path exists to serve.
+    The interaction is modal — put the pen down, move, lift — rather than hold-a-key-to-draw, because key repeat is throttled by the operating system (points would be sampled at a rate the library does not control) and holding one key while pressing another is beyond many of the motor abilities this path exists to serve.
 
-  The surface now carries `role="application"`, and that is load-bearing rather than decorative. A canvas with `tabindex` is not a form control, so NVDA and JAWS stay in browse mode over it and consume the arrow keys for document navigation; without the role the whole path would work in code and never reach the people it is for. How to sign is announced through `aria-describedby` from the new `keyboardHint` label, so the instructions travel through the same dictionary as the action buttons, under `HUBUI.SIGNATURE.KEYBOARD_HINT`.
+    The surface now carries `role="application"`, and that is load-bearing rather than decorative. A canvas with `tabindex` is not a form control, so NVDA and JAWS stay in browse mode over it and consume the arrow keys for document navigation; without the role the whole path would work in code and never reach the people it is for. How to sign is announced through `aria-describedby` from the new `keyboardHint` label, so the instructions travel through the same dictionary as the action buttons, under `HUBUI.SIGNATURE.KEYBOARD_HINT`.
 
 - **`[validFeedback]` is rendered.** The input has existed on `HubFieldControl` all along, so it compiled and type-checked on `<hub-signature>` and then did nothing at all. It now renders the same `.hub-field__feedback--valid` block as every other field of the family, under the same `showsValid` condition. An input that is accepted and ignored is worse than one that does not exist: it sends someone hunting through `ng-hub-ui-forms` for a bug that is not there.
 
@@ -277,7 +291,8 @@
 - **`isEmpty()`**, so a form can validate the field without parsing the serialized value. Previously the only way to know whether anything had been drawn was to inspect the SVG string.
 - **`toStrokes()` / `fromStrokes()`**, exposing the committed strokes as structured `HubSignatureStroke[]`. `toSvg()` remains the canonical form value — this is for callers that need the geometry itself, such as replaying a signature or migrating from a library that stored point groups. `fromStrokes()` is a programmatic write: like `writeValue()`, it repaints without reporting a user change to Angular forms.
 
-  They are deliberately not called `toData` / `fromData`, the names angular2-signaturepad uses: that library's `toData()` returns `Array<Array<{x, y, time}>>` and this one returns `{points: [{x, y, pressure}], color, width}[]`. Same name with an incompatible payload would let a migration compile and then fail silently wherever the value is typed `any`.
+    They are deliberately not called `toData` / `fromData`, the names angular2-signaturepad uses: that library's `toData()` returns `Array<Array<{x, y, time}>>` and this one returns `{points: [{x, y, pressure}], color, width}[]`. Same name with an incompatible payload would let a migration compile and then fail silently wherever the value is typed `any`.
+
 - **`(drawStart)` and `(drawEnd)` outputs**, emitted around a user stroke. They fill the gap left by libraries that exposed `onBeginEvent` / `onEndEvent`, and let a host react to drawing activity — enabling a submit button, pausing an autosave — without polling the value.
 
 ### Changed

@@ -6,6 +6,18 @@ This file documents breaking changes and migration steps for `ng-hub-ui-signatur
 > compatibility. A breaking change therefore ships as a **minor**, and this file is the only warning
 > you get — read it before upgrading within a major line.
 
+## [22.9.0] - 2026-09-23
+
+### Angular below 21.0.0 is no longer supported
+
+- **Change**: the `@angular/*` peer ranges move from `>=17.2.0` to `>=21.0.0`.
+
+- **Why**: It requires `ng-hub-ui-forms`, whose own floor is Angular 21, so npm refuses the install below that however this package is written.
+
+- **Impact — an application below 21.0.0 gets a peer warning where it used to get a build error.**
+  Nothing that worked stops working: those versions never compiled against this package. Upgrade
+  Angular to 21.0.0 or stay on the previous release.
+
 ## [22.8.0]
 
 ### The stylesheet no longer reaches outside the field
@@ -23,7 +35,7 @@ there. `CODING_RULES.md` allows four reasons for that and this field had none of
 Two cases change, and neither reports itself:
 
 - A rule that reached an inner element by adding a single class — `.contract-panel
-  .hub-signature__canvas { … }` — now ties with the library at (0,2,0) instead of beating it at
+.hub-signature__canvas { … }` — now ties with the library at (0,2,0) instead of beating it at
   (0,2,0) against (0,1,0), and loses on source order, because component styles are injected after
   the stylesheet your application ships. Add another level, or move the change into the tokens.
 - Markup of your own carrying the library's class names is no longer painted by them.
@@ -105,7 +117,7 @@ at all, and `[ariaLabel]` is not consulted.
 
 **Why.** The visible label and the accessible name could disagree, and routinely did — a Spanish
 form showing "Firma del titular" announced "Signature". That is a WCAG 2.5.3 (Label in Name)
-failure. Making the label *be* the name removes the possibility rather than asking every consumer
+failure. Making the label _be_ the name removes the possibility rather than asking every consumer
 to keep two strings in sync forever.
 
 **What you have to do.** Delete `[ariaLabel]` from every field that also has a `[label]`. Nothing
@@ -123,7 +135,7 @@ Keep `[ariaLabel]` only on a surface with no visible label. There it is now tran
 through `[labels]` / `provideHubSignature()`, then `HUBUI.SIGNATURE.ARIA_LABEL`, then the English
 fallback.
 
-**If you do nothing.** Names get *better*, not worse: a field whose `[label]` was translated and
+**If you do nothing.** Names get _better_, not worse: a field whose `[label]` was translated and
 whose `[ariaLabel]` was not now announces the translated text. The only cost is a dead binding left
 in your templates.
 
@@ -137,7 +149,7 @@ that exact literal from one who had never touched the input, so the translation 
 run.
 
 **What you have to do.** Nothing, unless you read `signature.ariaLabel()` off a component instance
-and expected `'Signature'` back. The *rendered* name is unchanged: with nothing else supplying one,
+and expected `'Signature'` back. The _rendered_ name is unchanged: with nothing else supplying one,
 the fallback is still `Signature`.
 
 **If you do nothing.** No visible change. The type is still `string`.
