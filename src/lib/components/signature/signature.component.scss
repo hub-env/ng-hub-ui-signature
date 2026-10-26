@@ -5,13 +5,13 @@
 // this sheet is reached by emulated encapsulation and none of it needs to go global.
 :where(.hub-signature) {
 	--hub-signature-bg: var(--hub-input-bg, var(--hub-sys-surface, #fff));
-	--hub-signature-color: var(--hub-input-color, var(--hub-sys-text-primary, #212529));
+	--hub-signature-color: var(--hub-input-color, var(--hub-sys-text-body, #212529));
 	--hub-signature-border-color: var(--hub-input-border-color, var(--hub-sys-border, #ced4da));
 	--hub-signature-border-width: var(--hub-input-border-width, 1px);
 	--hub-signature-border-radius: var(--hub-input-border-radius, var(--hub-ref-radius-md, 0.375rem));
 	--hub-signature-focus-border-color: var(--hub-input-focus-border-color, var(--hub-sys-color-primary, #0d6efd));
 	--hub-signature-focus-shadow: var(--hub-input-focus-box-shadow, 0 0 0 0.25rem rgb(13 110 253 / 25%));
-	--hub-signature-label-color: var(--hub-label-color, var(--hub-sys-text-primary, #212529));
+	--hub-signature-label-color: var(--hub-label-color, var(--hub-sys-text-body, #212529));
 	--hub-signature-label-font-size: var(--hub-label-font-size, var(--hub-ref-font-size-sm, 0.875rem));
 	--hub-signature-font-size: var(--hub-input-font-size, 1rem);
 	--hub-signature-actions-gap: var(--hub-ref-space-2, 0.5rem);
