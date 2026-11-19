@@ -6,6 +6,18 @@ This file documents breaking changes and migration steps for `ng-hub-ui-signatur
 > compatibility. A breaking change therefore ships as a **minor**, and this file is the only warning
 > you get — read it before upgrading within a major line.
 
+## [22.10.0] - 2026-11-19
+
+### Angular below 22.0.0 is no longer supported
+
+- **Change**: the `@angular/common`, `@angular/core` and `@angular/forms` peer ranges move from `>=21.0.0` to `>=22.0.0`.
+
+- **Why**: it requires `ng-hub-ui-forms`, whose floor is Angular 22 since 22.47.0.
+
+- **Impact**: an application on Angular 21 gets a peer conflict at install. Nothing in this package's own code changed.
+
+- **Migration**: upgrade Angular to 22.0.0, or stay on `ng-hub-ui-signature` 22.9.1.
+
 ## [22.9.0] - 2026-09-23
 
 ### Angular below 21.0.0 is no longer supported

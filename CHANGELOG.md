@@ -1,5 +1,14 @@
 # Changelog
 
+## [22.10.0] - 2026-11-19
+
+### Changed
+
+- **The Angular floor rises from `21.0.0` to `22.0.0`.** The `@angular/common`, `@angular/core` and
+  `@angular/forms` peers follow `ng-hub-ui-forms` 22.47.0, which now requires Angular 22 and
+  `@angular/cdk`. An application below 22 gets a peer conflict at install. See
+  `BREAKING_CHANGES.md`.
+
 ## [22.9.1] - 2026-10-26
 
 ### Changed
